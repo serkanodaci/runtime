@@ -1,5 +1,9 @@
 ### Check out job creating a git bundle and publishing it
 ### into an Azure artifact for reuse by the subsequent build and test execution phases.
+
+parameters:
+  paths: '' # object containing coreclr, libraries and installer include and exclude paths in an array form.
+
 jobs:
 - job: checkout
   displayName: Checkout
@@ -10,7 +14,7 @@ jobs:
 
     ${{ if ne(variables['System.TeamProject'], 'public') }}:
       name: Hosted Mac Internal
-  
+
   steps:
   - checkout: self
     clean: true
@@ -22,3 +26,15 @@ jobs:
   - publish: $(Build.StagingDirectory)/Checkout.bundle
     artifact: Checkout_bundle
     displayName: Upload Checkout.bundle
+
+  - ${{ each path in parameters.paths }}:
+    - template: evaluate-changed-paths.yml
+      parameters:
+        subsetName: ${{ path.subset }} 
+        arguments:
+        - -difftarget 'HEAD^'
+        - -subset ${{ path.subset }}
+        - ${{ if ne(path.include[0], '') }}:
+          - -includepaths ${{ join('+', path.include) }}
+        - ${{ if ne(path.exclude[0], '') }}:
+          - excludepaths ${{ join('+', path.exclude) }}
