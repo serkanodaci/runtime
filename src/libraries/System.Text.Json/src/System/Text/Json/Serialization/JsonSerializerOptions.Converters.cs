@@ -20,7 +20,7 @@ namespace System.Text.Json
         private static readonly Dictionary<Type, JsonConverter> s_defaultSimpleConverters = GetDefaultSimpleConverters();
 
         // The global list of built-in converters that override CanConvert().
-        private static readonly List<JsonConverter> s_defaultFactoryConverters = GetDefaultConverters();
+        private static readonly JsonConverter[] s_defaultFactoryConverters = GetDefaultConverters();
 
         // The cached converters (custom or built-in).
         private readonly ConcurrentDictionary<Type, JsonConverter?> _converters = new ConcurrentDictionary<Type, JsonConverter?>();
@@ -40,19 +40,20 @@ namespace System.Text.Json
             return converters;
         }
 
-        private static List<JsonConverter> GetDefaultConverters()
+        private static JsonConverter[] GetDefaultConverters()
         {
             const int NumberOfConverters = 2;
 
-            var converters = new List<JsonConverter>(NumberOfConverters);
-
+            var converters = new JsonConverter[]
+            {
             // Use a list for converters that implement CanConvert().
-            converters.Add(new JsonConverterEnum());
-            converters.Add(new JsonKeyValuePairConverter());
+                new JsonConverterEnum(),
+                new JsonKeyValuePairConverter()
+            };
 
             // We will likely add collection converters here in the future.
 
-            Debug.Assert(NumberOfConverters == converters.Count);
+            Debug.Assert(NumberOfConverters == converters.Length);
 
             return converters;
         }
