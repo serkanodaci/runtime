@@ -31,17 +31,38 @@ namespace System.Text.Json
 
         private static Dictionary<Type, JsonConverter> GetDefaultSimpleConverters()
         {
+            const int NumberOfSimpleConverters = 21;
             var converters = new Dictionary<Type, JsonConverter>(NumberOfSimpleConverters);
 
             // Use a dictionary for simple converters.
-            foreach (JsonConverter converter in DefaultSimpleConverters)
-            {
-                converters.Add(converter.TypeToConvert!, converter);
-            }
-
+            // When adding to this, update NumberOfSimpleConverters above.
+            Add(new JsonConverterBoolean());
+            Add(new JsonConverterByte());
+            Add(new JsonConverterByteArray());
+            Add(new JsonConverterChar());
+            Add(new JsonConverterDateTime());
+            Add(new JsonConverterDateTimeOffset());
+            Add(new JsonConverterDouble());
+            Add(new JsonConverterDecimal());
+            Add(new JsonConverterGuid());
+            Add(new JsonConverterInt16());
+            Add(new JsonConverterInt32());
+            Add(new JsonConverterInt64());
+            Add(new JsonConverterJsonElement());
+            Add(new JsonConverterObject());
+            Add(new JsonConverterSByte());
+            Add(new JsonConverterSingle());
+            Add(new JsonConverterString());
+            Add(new JsonConverterUInt16());
+            Add(new JsonConverterUInt32());
+            Add(new JsonConverterUInt64());
+            Add(new JsonConverterUri());
             Debug.Assert(NumberOfSimpleConverters == converters.Count);
 
             return converters;
+
+            void Add(JsonConverter converter) =>
+                converters.Add(converter.TypeToConvert!, converter);
         }
 
         /// <summary>
@@ -236,38 +257,6 @@ namespace System.Text.Json
 
             ThrowHelper.ThrowInvalidOperationException_SerializationDuplicateAttribute(attributeType, classType, propertyInfo);
             return default;
-        }
-
-        private const int NumberOfSimpleConverters = 21;
-
-        private static IEnumerable<JsonConverter> DefaultSimpleConverters
-        {
-            get
-            {
-                // When adding to this, update NumberOfSimpleConverters above.
-
-                yield return new JsonConverterBoolean();
-                yield return new JsonConverterByte();
-                yield return new JsonConverterByteArray();
-                yield return new JsonConverterChar();
-                yield return new JsonConverterDateTime();
-                yield return new JsonConverterDateTimeOffset();
-                yield return new JsonConverterDouble();
-                yield return new JsonConverterDecimal();
-                yield return new JsonConverterGuid();
-                yield return new JsonConverterInt16();
-                yield return new JsonConverterInt32();
-                yield return new JsonConverterInt64();
-                yield return new JsonConverterJsonElement();
-                yield return new JsonConverterObject();
-                yield return new JsonConverterSByte();
-                yield return new JsonConverterSingle();
-                yield return new JsonConverterString();
-                yield return new JsonConverterUInt16();
-                yield return new JsonConverterUInt32();
-                yield return new JsonConverterUInt64();
-                yield return new JsonConverterUri();
-            }
         }
     }
 }
