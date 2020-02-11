@@ -137,41 +137,41 @@ namespace System.Text.Json
                 case ClassType.Object:
                     {
                         CreateObject = options.MemberAccessorStrategy.CreateConstructor(type);
+                        Dictionary<string, JsonPropertyInfo> cache = CreatePropertyCache();
 
-                        PropertyInfo[] properties = type.GetProperties(BindingFlags.Instance | BindingFlags.Public);
-
-                        Dictionary<string, JsonPropertyInfo> cache = CreatePropertyCache(properties.Length);
-
-                        foreach (PropertyInfo propertyInfo in properties)
+                        for (Type? currentType = runtimeType; currentType != null; currentType = currentType.BaseType)
                         {
-                            // Ignore indexers
-                            if (propertyInfo.GetIndexParameters().Length > 0)
+                            foreach (PropertyInfo propertyInfo in currentType.GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly))
                             {
-                                continue;
-                            }
-
-                            // For now we only support public getters\setters
-                            if (propertyInfo.GetMethod?.IsPublic == true ||
-                                propertyInfo.SetMethod?.IsPublic == true)
-                            {
-                                JsonPropertyInfo jsonPropertyInfo = AddProperty(propertyInfo.PropertyType, propertyInfo, type, options);
-                                Debug.Assert(jsonPropertyInfo != null && jsonPropertyInfo.NameAsString != null);
-
-                                // If the JsonPropertyNameAttribute or naming policy results in collisions, throw an exception.
-                                if (!JsonHelpers.TryAdd(cache, jsonPropertyInfo.NameAsString, jsonPropertyInfo))
+                                // Ignore indexers
+                                if (propertyInfo.GetIndexParameters().Length > 0)
                                 {
-                                    JsonPropertyInfo other = cache[jsonPropertyInfo.NameAsString];
+                                    continue;
+                                }
 
-                                    if (other.ShouldDeserialize == false && other.ShouldSerialize == false)
+                                // For now we only support public getters\setters
+                                if (propertyInfo.GetMethod?.IsPublic == true ||
+                                    propertyInfo.SetMethod?.IsPublic == true)
+                                {
+                                    JsonPropertyInfo jsonPropertyInfo = AddProperty(propertyInfo.PropertyType, propertyInfo, type, options);
+                                    Debug.Assert(jsonPropertyInfo != null && jsonPropertyInfo.NameAsString != null);
+
+                                    // If the JsonPropertyNameAttribute or naming policy results in collisions, throw an exception.
+                                    if (!JsonHelpers.TryAdd(cache, jsonPropertyInfo.NameAsString, jsonPropertyInfo))
                                     {
-                                        // Overwrite the one just added since it has [JsonIgnore].
-                                        cache[jsonPropertyInfo.NameAsString] = jsonPropertyInfo;
+                                        JsonPropertyInfo other = cache[jsonPropertyInfo.NameAsString];
+
+                                        if (other.ShouldDeserialize == false && other.ShouldSerialize == false)
+                                        {
+                                            // Overwrite the one just added since it has [JsonIgnore].
+                                            cache[jsonPropertyInfo.NameAsString] = jsonPropertyInfo;
+                                        }
+                                        else if (jsonPropertyInfo.ShouldDeserialize == true || jsonPropertyInfo.ShouldSerialize == true)
+                                        {
+                                            ThrowHelper.ThrowInvalidOperationException_SerializerPropertyNameConflict(this, jsonPropertyInfo);
+                                        }
+                                        // else ignore jsonPropertyInfo since it has [JsonIgnore].
                                     }
-                                    else if (jsonPropertyInfo.ShouldDeserialize == true || jsonPropertyInfo.ShouldSerialize == true)
-                                    {
-                                        ThrowHelper.ThrowInvalidOperationException_SerializerPropertyNameConflict(this, jsonPropertyInfo);
-                                    }
-                                    // else ignore jsonPropertyInfo since it has [JsonIgnore].
                                 }
                             }
                         }
@@ -382,7 +382,7 @@ namespace System.Text.Json
             return info;
         }
 
-        private Dictionary<string, JsonPropertyInfo> CreatePropertyCache(int capacity)
+        private Dictionary<string, JsonPropertyInfo> CreatePropertyCache()
         {
             StringComparer comparer;
 
@@ -395,7 +395,7 @@ namespace System.Text.Json
                 comparer = StringComparer.Ordinal;
             }
 
-            return new Dictionary<string, JsonPropertyInfo>(capacity, comparer);
+            return new Dictionary<string, JsonPropertyInfo>(comparer);
         }
 
         public JsonPropertyInfo? PolicyProperty { get; private set; }
