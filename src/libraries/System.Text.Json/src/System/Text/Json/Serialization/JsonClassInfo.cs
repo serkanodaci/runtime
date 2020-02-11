@@ -137,7 +137,10 @@ namespace System.Text.Json
                 case ClassType.Object:
                     {
                         CreateObject = options.MemberAccessorStrategy.CreateConstructor(type);
-                        Dictionary<string, JsonPropertyInfo> cache = CreatePropertyCache();
+                        Dictionary<string, JsonPropertyInfo> cache = new Dictionary<string, JsonPropertyInfo>(
+                            Options.PropertyNameCaseInsensitive
+                                ? StringComparer.OrdinalIgnoreCase
+                                : StringComparer.Ordinal);
 
                         for (Type? currentType = runtimeType; currentType != null; currentType = currentType.BaseType)
                         {
@@ -380,22 +383,6 @@ namespace System.Text.Json
             }
 
             return info;
-        }
-
-        private Dictionary<string, JsonPropertyInfo> CreatePropertyCache()
-        {
-            StringComparer comparer;
-
-            if (Options.PropertyNameCaseInsensitive)
-            {
-                comparer = StringComparer.OrdinalIgnoreCase;
-            }
-            else
-            {
-                comparer = StringComparer.Ordinal;
-            }
-
-            return new Dictionary<string, JsonPropertyInfo>(comparer);
         }
 
         public JsonPropertyInfo? PolicyProperty { get; private set; }
